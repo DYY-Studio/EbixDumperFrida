@@ -1,5 +1,4 @@
 import ObjC from "frida-objc-bridge";
-import path from "path";
 
 const dummySeedData = ObjC.classes.NSString.stringWithString_("3544003544003544003544000000000000000000000000DD");
 
