@@ -71,7 +71,7 @@ function extractEbiFile(file: ObjC.Object, targetDir: ObjC.Object) {
         if (imageError == 0) {
             const imageData = imageDict.objectForKey_(ObjC.classes.NSString.stringWithString_("data"));
             const data = ptr(imageData.bytes()).readByteArray(2);
-            console.log(`Image data header: ${data ? new Uint8Array(data) : "null"}`);
+            // console.log(`Image data header: ${data ? new Uint8Array(data) : "null"}`);
             
             var dataToWrite = imageData;
             var extension = "bin";
