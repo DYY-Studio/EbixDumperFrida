@@ -1,4 +1,6 @@
 import ObjC from "frida-objc-bridge";
+import { Agent } from "./libs/pull.js"
+import path from "node:path";
 
 const dummySeedData = ObjC.classes.NSString.stringWithString_("3544003544003544003544000000000000000000000000DD");
 
@@ -11,6 +13,7 @@ if (makeSeedDataBlock) {
     })
 }
 
+const agent = new Agent();
 
 const moduleSecurity = Process.getModuleByName("Security");
 const SecItemCopyMatching = new NativeFunction(
@@ -61,13 +64,12 @@ function searchEbixFiles() {
     return ebixFiles;
 }
 
-function extractEbiFile(file: ObjC.Object, targetDir: ObjC.Object) {
+async function extractEbiFile(file: ObjC.Object) {
     console.log(`Extracting EBI file... Image count: ${file.getImageCount()}`);
     for (let i = 0; i < file.getImageCount(); i++) {
         
         const imageDict = file.imageDataDictAtIndex_(i);
         const imageError = imageDict.objectForKey_(ObjC.classes.NSString.stringWithString_("error"));
-        console.log(`Processing image ${i + 1}/${file.getImageCount()}, error code: ${imageError}`);
         if (imageError == 0) {
             const imageData = imageDict.objectForKey_(ObjC.classes.NSString.stringWithString_("data"));
             const data = ptr(imageData.bytes()).readByteArray(2);
@@ -85,15 +87,18 @@ function extractEbiFile(file: ObjC.Object, targetDir: ObjC.Object) {
                     const pngData = img.UIImagePNGRepresentation();
                     dataToWrite = pngData;
                 }
-                const imagePath = targetDir.stringByAppendingPathComponent_(
-                    ObjC.classes.NSString.stringWithFormat_(
-                        ObjC.classes.NSString.stringWithString_(`${(i + 1).toString().padStart(4, '0')}.${extension}`)
-                    )
+
+                await agent.pull_buffer(
+                    Buffer.from(ptr(dataToWrite.bytes()).readByteArray(dataToWrite.length())!), 
+                    `${(i + 1).toString().padStart(4, '0')}.${extension}`,
+                    "w"
                 );
-                dataToWrite.writeToFile_atomically_(imagePath, true);
             }
+        } else {
+            console.log(`\nCannot process image ${i + 1}/${file.getImageCount()}, error code: ${imageError}`);
         }
     }
+    send({type: "save"})
 }
 
 function readLvfFileList(instance: NativePointer) {
@@ -131,7 +136,7 @@ const BV_readFile = new NativeFunction(
     'int', ['pointer', 'pointer', 'pointer', 'int', 'pointer', 'pointer', 'pointer']
 );
 
-async function extractLvfFile(filePath: string, envId: ObjC.Object, targetDir: ObjC.Object) {
+async function extractLvfFile(filePath: string, envId: ObjC.Object) {
     const CEngineMng_Open = Process.findModuleByName("EBIWrapperKit")?.
                                     findExportByName("_ZN10CEngineMng4OpenERKNSt3__112basic_stringIwNS0_11char_traitsIwEENS0_9allocatorIwEEEES8_");
     if (!CEngineMng_Open) {
@@ -189,33 +194,18 @@ async function extractLvfFile(filePath: string, envId: ObjC.Object, targetDir: O
         const actualSize = outSize.readU32();
 
         if (result === 0 && actualSize === fileSize) {
-            const fileData = ObjC.classes.NSData.alloc().initWithBytes_length_(buffer, fileSize);
-
-            var outputPath = ObjC.classes.NSString.stringWithString_(targetDir)
-            const pathComponents = fileName.split("/");
-            for (let i = 0; i < pathComponents.length - 1; i++) {
-                const pathComponent = pathComponents[i];
-                outputPath = outputPath.stringByAppendingPathComponent_(
-                    ObjC.classes.NSString.stringWithString_(pathComponent)
-                );
+            const dirname = path.dirname(fileName);
+            if (dirname.length > 0) {
+                send({type: "directory", path: dirname});
             }
 
-            const attributes = ObjC.classes.NSMutableDictionary.alloc().init();
-            const error = ObjC.classes.NSError.alloc().init();
-            fileManager.createDirectoryAtPath_withIntermediateDirectories_attributes_error_(
-                outputPath, true, attributes, error
-            );
-
-            outputPath = outputPath.stringByAppendingPathComponent_(
-                ObjC.classes.NSString.stringWithString_(pathComponents.pop()!)
-            );
-            
-            fileData.writeToFile_atomically_(outputPath, true);
-            console.log(`Successfully extracted ${fileName}`);
+            await agent.pull_buffer(Buffer.from(buffer.readByteArray(actualSize)!), fileName, "w")
+            // console.log(`Successfully extracted ${fileName}`);
         } else {
             console.error(`Failed to get file data for ${fileName}. Result: ${result}, Actual Size: ${actualSize}`);
         }
     }
+    send({type: "save"})
 }
 
 async function openEbixFileAndExtract(filePath: string) {
@@ -243,40 +233,28 @@ async function openEbixFileAndExtract(filePath: string) {
         const bodyFormat = fileInfo.bodyFormat().toString();
         const bodyFormatVersion = fileInfo.bodyFormatVersion().toString();
 
-        const fileManager = ObjC.classes.NSFileManager.defaultManager();
-        const urls = fileManager.URLsForDirectory_inDomains_(5, 1); // 5 = LibraryDirectory, 1 = NSUserDomainMask
-        const targetDir: ObjC.Object = urls.firstObject().path().stringByAppendingPathComponent_(
-            ObjC.classes.NSString.stringWithString_("DumpedBooks")
-        ).stringByAppendingPathComponent_(
-            bookInfo.bookName()
-        );
-
-        const attributes = ObjC.classes.NSMutableDictionary.alloc().init();
-        const error = ObjC.classes.NSError.alloc().init();
-        fileManager.createDirectoryAtPath_withIntermediateDirectories_attributes_error_(
-            targetDir, true, attributes, error
-        );
-
         switch (bodyFormat) {
             case "ebi":
-                extractEbiFile(file, targetDir);
+                send({type: "info", bundleId: bookInfo.bookName().toString(), fileFormat: "cbz"})
+                await extractEbiFile(file);
                 break;
             case "lvf":
-                await extractLvfFile(filePath, envID, targetDir);
+                send({type: "info", bundleId: bookInfo.bookName().toString(), fileFormat: "lvf"})
+                await extractLvfFile(filePath, envID);
                 break;
             default:
                 console.error(`Unsupported body format: ${bodyFormat}`);
         }
         file.closeInstance();
-        console.log(`Extraction completed for ${filePath}`);
+        console.log(`\nExtraction completed for ${filePath}`);
     } else {
-        console.error(`Failed to open EBIX file: ${filePath}`);
+        console.error(`\nFailed to open EBIX file: ${filePath}`);
     }
 }
 
 async function dumpall() {
     const ebixFiles = searchEbixFiles();
-    if (ebixFiles.length === 0) {
+    if (ebixFiles.length == 0) {
         console.error("No EBIX files found");
         return;
     }

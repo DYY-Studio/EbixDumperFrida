@@ -6,12 +6,6 @@
 
 直接使用 EBookJapan 的 `EBIWrapperKit.framework` 实现EBIX内部文件导出
 
-**现在只是一个毛坯房，并没有前端**
-
-## Preview！
-* 文件直接dump到`Library/DumpedBooks`下
-* 生命周期控制可能有问题
-
 ## 支持格式
 * EBIX (EBI)
   * 已验证：`HVQBOOK`
@@ -20,6 +14,7 @@
 * EBIX (LVF)
   * 已验证：`EPFA`
   * 直接保留原始文件结构DUMP
+  * 可以使用[LVF2EPUB](https://github.com/DYY-Studio/lvf2ePub)转换为标准ePub3文件
 
 ## 环境要求
 * App端
@@ -33,13 +28,26 @@
     * 未测试，目前版本直接dump到沙盒里，没法取出
     * 注入frida-gadget
 * 控制端
-  * Python 3
-  * 安装了frida, frida-tools
+  * Python 3.8+
+  * Node.js
+  * ```shell
+    pip install -r requirements.txt
+    cd ./script
+    npm install
+    ```
 
 ## 当前使用方法
-* 直接操作
-  * 在index.ts末尾换行加个`dumpall()`
-  * 用frida CLI手动挂载，一Attach就开始dump
+* 使用`decrypter.py`
+  * 文件会保存到运行目录`/output`下
+  * 默认操作为`dumpall`，请手动管理本地文件
+```shell
+#macOS/PlayCover
+python decrypter.py -n ebookjapan 
+# 或 jp.co.yahoo.ebookjapan 
+
+#iOS (USB Connection)
+python decrypter.py -U -N jp.co.yahoo.ebookjapan 
+```
 * RPC操作
   * `search()`
     * 返回`Library/Book`下扫描到的所有`.ebix`文件路径
@@ -50,9 +58,9 @@
     * 将扫描到的所有文件全部dump
 
 ## ToDo
-- [ ] 给活人用的前端
+- [x] 给活人用的前端
 - [ ] 更多格式兼容
-- [ ] LVF2EPUB
+- [x] LVF2EPUB
 
 ## 许可证
 MIT

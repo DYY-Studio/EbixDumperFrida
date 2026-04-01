@@ -15,6 +15,7 @@
     "@types/node": "^18.14.0"
   },
   "dependencies": {
-    "frida-objc-bridge": "^8.0.5"
+    "frida-objc-bridge": "^8.0.5",
+    "frida-remote-stream": "^6.0.3"
   }
 }
