@@ -19,35 +19,37 @@
 ## 环境要求
 * App端
   * 已越狱的iOS设备
-    * 安装了frida-server
+    * 安装了`frida-server`
   * 搭载Apple Silicon的macOS设备（推荐）
     * 使用PlayCover运行EBookJapan
   * vphone-cli 
     * 未测试，那为什么不直接用PlayCover
   * 未越狱的iOS设备
-    * 未测试，目前版本直接dump到沙盒里，没法取出
-    * 注入frida-gadget
+    * 未测试
+    * 注入`frida-gadget`并侧载
 * 控制端
   * Python 3.8+
   * Node.js
   * ```shell
-    pip install -r requirements.txt
-    cd ./script
-    npm install
+    pip install -r requirements.txt # 安装Python依赖
+    cd script
+    npm install # 安装Node.js包
     ```
 
 ## 当前使用方法
 * 使用`decrypter.py`
   * 文件会保存到运行目录`/output`下
   * 默认操作为`dumpall`，请手动管理本地文件
-```shell
-#macOS/PlayCover
-python decrypter.py -n ebookjapan 
-# 或 jp.co.yahoo.ebookjapan 
+  * ```shell
+    # 启动应用
 
-#iOS (USB Connection)
-python decrypter.py -U -N jp.co.yahoo.ebookjapan 
-```
+    # macOS/PlayCover
+    python decrypter.py -n ebookjapan 
+    # 或 jp.co.yahoo.ebookjapan 
+
+    # iOS (USB Connection)
+    python decrypter.py -U -N jp.co.yahoo.ebookjapan 
+    ```
 * RPC操作
   * `search()`
     * 返回`Library/Book`下扫描到的所有`.ebix`文件路径
