@@ -59,10 +59,13 @@
     * 执行`search`
     * 将扫描到的所有文件全部dump
 
-## ToDo
+## TODO
 - [x] 给活人用的前端
 - [ ] 更多格式兼容
 - [x] LVF2EPUB
+
+## 致谢
+* 本项目CLI工具与frida数据发送部分源自 [frida-ios-dump](https://github.com/miticollo/frida-ios-dump)
 
 ## 许可证
 MIT

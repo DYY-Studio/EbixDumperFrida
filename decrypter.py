@@ -1,3 +1,11 @@
+# **************************************************
+# 
+# This file is modified from miticollo/frida-ios-dump
+# https://github.com/miticollo/frida-ios-dump
+#
+# License: MIT
+#
+# **************************************************
 import os
 import shutil
 import stat

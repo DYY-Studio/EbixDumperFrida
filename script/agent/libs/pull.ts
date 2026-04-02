@@ -1,3 +1,11 @@
+/*
+
+This file is copied from miticollo/frida-ios-dump
+https://github.com/miticollo/frida-ios-dump
+
+License: MIT
+
+*/
 import RemoteStreamController, { Packet } from 'frida-remote-stream';
 import * as fs from 'node:fs';
 import { Readable } from 'node:stream';
