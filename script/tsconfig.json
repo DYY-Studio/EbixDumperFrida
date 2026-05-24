@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],
+    "types": ["frida-gum", "node"],
     "module": "Node16",
     "strict": true,
     "noEmit": true
