@@ -2,7 +2,7 @@
 
 本项目仅供编程交流学习使用，请勿挪作他用。
 
-直接使用 EBookJapan 的 `EBIWrapperKit.framework` 实现EBIX内部文件导出
+直接使用 EBookJapan 的 `EBIWrapperKit.framework` / `libebook3.so` 实现EBIX内部文件导出
 
 ## 支持设备
 * Android
@@ -71,6 +71,11 @@
   * `dumpall()`
     * 执行`search`
     * 将扫描到的所有文件全部dump
+
+## 连载漫画的解密
+1. 使用`Charles`或其他抓包软件进行代理
+2. 找到下载的`ebix`文件
+3. 把`ebix`文件放到数据目录下即可
 
 ## TODO
 - [x] 给活人用的前端
