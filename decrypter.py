@@ -75,7 +75,7 @@ class DecrypterApplication(ConsoleApplication):
             self._update_status("Compiling script...")
             compiler: frida.Compiler = frida.Compiler()
             compiler.on("diagnostics", lambda diag: self._log(level="error", text=f"Compilation failed: {diag}"))
-            agent_source: str = compiler.build('index.ts', project_root=AGENT_ROOT_PATH, compression='terser')
+            agent_source: str = compiler.build('index.ts', project_root=AGENT_ROOT_PATH, compression='terser', type_check='none')
             self._update_status("Script compiled!")
 
             try:
